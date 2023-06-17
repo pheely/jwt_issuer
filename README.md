@@ -10,8 +10,9 @@ cargo build --release
 
 ## Run
 
+A RSA 256 private key is required. Use the `PEM_FILE` environment to specify it path.
 ```bash
-./target/release/jwt_issuer
+PEM_FILE=<private_key_path> ./target/release/jwt_issuer
 ```
 
 ## Logging level
@@ -19,7 +20,7 @@ cargo build --release
 There is no log by default. To set a logging level, use the `RUST_LOG` environment variable. For example, to  turn on the debug log, 
 
 ```bash
-RUST_LOG=debug ./target/release/jwt_issuer
+RUST_LOG=debug PEM_FILE=<private_key_path> ./target/release/jwt_issuer
 ```
 
 ## Development

@@ -10,6 +10,9 @@
             "name": "rust is fun",
             "program": "${workspaceRoot}/target/debug/jwt_issuer",
             "args": [],
+            "env": {
+                "PEM_FILE": "/Users/pyang/Documents/code/github/jwt-issuer/private_key.pem"
+            },
             "cwd": "${workspaceRoot}",
             "sourceLanguages": ["rust"]
         }

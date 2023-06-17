@@ -3,6 +3,10 @@ use jwt_issuer_lib::create_access_token;
 use jwt_issuer_lib::QualifiedEndpoint;
 use log;
 use serde::{Deserialize, Serialize};
+use std::env;
+use std::process;
+use std::fs;
+use std::io::Error;
 
 static REDIRECT_URL: &str = "/sso/";
 static AUDIENCE: &str = "/sso/oauth2/realms/root/realms/api/access_token";
@@ -12,6 +16,8 @@ static PROTOCOL: &str = "http";
 static HOST: &str = "localhost";
 static PORT: &str = "8080";
 static PATH: &str = "/sso/oauth2/api";
+
+static mut PRIVATE_KEY: Result<String,Error> = Ok(String::new());
 
 // The following fields are expected from the request payload
 // only `scope` is used for now
@@ -53,7 +59,10 @@ async fn access_token(
         path: String::from(PATH),
     };
 
-    let access_token = create_access_token(client_token, scope, qualified_endpoint);
+    let access_token: String;
+    unsafe {
+        access_token = create_access_token(client_token, scope, qualified_endpoint, &PRIVATE_KEY);
+    }
 
     let response_payload = ResponsePayload {
         access_token,
@@ -68,6 +77,22 @@ async fn access_token(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
+    
+    let pem_file = env::var("PEM_FILE");
+    if pem_file.is_err() {
+        log::error!("Environment variable PEM_FILE not set.");
+        process::exit(1);
+    }
+
+    let private_key = fs::read_to_string(pem_file.unwrap());
+    if private_key.is_err() {
+        log::error!("Failed to load the pem file.");
+        process::exit(1);
+    }
+
+    unsafe {
+        PRIVATE_KEY = private_key;
+    }
 
     HttpServer::new(|| App::new().service(access_token))
         .bind((HOST, PORT.parse().unwrap()))?

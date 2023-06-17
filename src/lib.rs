@@ -3,6 +3,7 @@ use log;
 use serde::Deserialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+use std::io::Error;
 
 static CTS: &str = "OAUTH2_STATELESS_GRANT";
 static TOKEN_NAME: &str = "access_token";
@@ -20,36 +21,6 @@ nG6kiJB4m/c2VeG+3aLAXvea341cD1Z8guvse3n4U0NLPwXD+eyKLUT2pX3SOf8X
 i/8IsGTbfXAEYRJ0zqrBq/AH04a5b4Z34wT2KjYPlZeQ0iSa6hiqQMb5INaqnoLK
 rwIDAQAB
 -----END PUBLIC KEY-----
-"#;
-
-static SERVER_PRIVATE_KEY: &str = r#"
------BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAvYnVJRHILgFKsv5z7ACWaGCQMH5ArbOgFWQBczA9OL43jmaE
-sXA+Ju81lcWDi0Y8M1TzIF7HygLSl5z556TSU1JzSxiLefm+LZv5lfT6RMMed+R5
-MstDYt0nePE3wxjDNxeWrCFLCZwr6h75KOkBIH6/TbxL0NX+zSy/iSkLCWOmiUSe
-DNBX8cLf/P0s0p2yyMrTBvkrb76CMuIyaH15PCGQI6/rNOcnhdxrK5U0jRWncU/s
-oZE2YAo1C0zcakFqsuwhqwGbMEqDlQP91biFwBwivmBuyrr4EsWy7qsHa0iDwHuH
-WC+/V5FBKR5rhLNzfke2AuTFKaPSF/IUr4GSVwIDAQABAoIBAC3FJRWIj8CcSz+i
-NrgdBDU8bFVph5DquZOwzLDWS1JyjNP0acK3iiq4xUXfpn5xfYQf1X5RpQlhWR2H
-qMmJgcjhNjpCORxBdO1qpwDRYcZNIARvxdzAPQuYwDlydrbEOhAJwDbc61PsxKYK
-yLxaWA1SzjulZuGNa7R8Q9yJbsLbRRg8+dL2npV1Niq2OOxVSUnQH+QbjXRLgsvg
-4htwLvthfaEoTeH+7a/M+g+LatjA7Z1qBkXa+xJJPJSz03mPIgCKXHgPV1xigTlG
-KvSg69HhEcT8urWkNFRz+PvYp39/l5IfaK4tluFtmjAZw12Id0/LW8p23R6GcqjL
-MPaEFZECgYEA5XKbZWTJdUOJVh+MPeLDk7B78Lbv43baL224/ns/kxX3FMKNYZdD
-Qo86xXWd/cMOarNzYqT1KqBmT3O+pqfxjnLpibIl3uV3Dnpk0CPXvxRVq3APS37N
-v+0dRMNTMetlrZh8ZPpvvhc47TJ5mJTmIPM2v9l8nXwF+PZAckfw9ZUCgYEA03jp
-kW5Fjuuhv/VgDTWRHAk93yu20svf+HQoO4YyT23RTdFMvWf83favdro+m7EWsgs4
-dKLxPuBXypRICThzdFdcven6xTGHb93XsYQBUJLqJ+GbU1VC876lEyqjIJXusT9W
-uuEgXSV8Nl3IQgMN2cUHpqTRiBi1SLmvZ/MU1TsCgYBHLuMe9cG6a5Vz7p2npW5f
-p2UMLPUHcJwIEtZNvRbgHvRksGcEW9U2FRF6qR6214jleX7Wn66f5ttW0uXW9ktu
-kh/55Bbzq+TfzQDxwezxDvH1GfLkzRYv8PQfnSl2Vz1YOfJ9sWRxaOr0S7CFscwj
-dNELfAG5Kf0AXAVqbv9GcQKBgQCGG4K7uJuiBCpCisCL//FzPyUelyFM0v/JFxjA
-jtzu5Cy81cN9xillNeCWQYwcvhQvetAln4OwJSNnk9uPBV6qZBCrW2utjDhgp+X2
-bElNKK4X9onDMinQW5Fh80MaEhsaCpncz5HvoCsCazzpJ/irpriwZIuAbHLimOb0
-3AHVKwKBgFAnw70isjZ9/h1uqLTjCCCA7ASIKQjEVcGXY3bsvVuaDxv+NsZFhpwF
-5MgXTEVoiNprj+gXMPC2B0XFmmUdqnDnPM9eyH+SygBfXAnXNoluSDEPrHusEXXI
-CuYS3Qoj8BjLxOTqOO+JTtCWUHngnzIlTKtX1znD5qheOZIxAtrC
------END RSA PRIVATE KEY-----
 "#;
 
 #[derive(jwt_simple::prelude::Serialize, Deserialize)]
@@ -107,6 +78,7 @@ pub fn create_access_token(
     client_token: &String,
     scope: &String,
     endpoint: QualifiedEndpoint,
+    private_key: &Result<String, Error>
 ) -> String {
     let client_jwt_claims = match process_client_token(client_token) {
         Ok(jwt_claims) => jwt_claims,
@@ -152,7 +124,9 @@ pub fn create_access_token(
         .with_audience(&subject)
         .with_subject(&subject);
 
-    let key_pair = RS256KeyPair::from_pem(SERVER_PRIVATE_KEY).unwrap();
+    // The private_key is safe to unwrap when we got here
+    let key_string = private_key.as_ref();
+    let key_pair = RS256KeyPair::from_pem(key_string.unwrap()).unwrap();
 
     key_pair.sign(claims).unwrap()
 }
