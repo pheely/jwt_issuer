@@ -13,7 +13,7 @@ static AUDIENCE: &str = "/sso/oauth2/realms/root/realms/api/access_token";
 static CLIENT_ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
 static PROTOCOL: &str = "http";
-static HOST: &str = "localhost";
+static HOST: &str = "0.0.0.0";
 static PORT: &str = "8080";
 static PATH: &str = "/sso/oauth2/api";
 
@@ -78,6 +78,8 @@ async fn access_token(
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     
+    log::debug!("Starting up...");
+
     let pem_file = env::var("PEM_FILE");
     if pem_file.is_err() {
         log::error!("Environment variable PEM_FILE not set.");
@@ -89,6 +91,8 @@ async fn main() -> std::io::Result<()> {
         log::error!("Failed to load the pem file.");
         process::exit(1);
     }
+
+    log::debug!("Pem file loaded...");
 
     unsafe {
         PRIVATE_KEY = private_key;

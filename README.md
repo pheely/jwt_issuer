@@ -60,3 +60,22 @@ Here is a sample `launch.json`:
     ]
 }
 ```
+
+## Run as a Docker container
+
+Build image:
+
+```bash
+docker build -t pheely/jwt_issuer:0.1 .
+```
+
+Run app:
+```bash
+docker container run -p 8080:8080 pheely/jwt_issuer:0.1
+```
+
+Set logging level to debugL:
+
+```bash
+docker container run -p 8080:8080 --env RUST_LOG=debug pheely/jwt_issuer:0.1
+```
